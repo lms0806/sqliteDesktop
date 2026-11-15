@@ -16,12 +16,12 @@ Rust + Tauri로 만든 SQLite GUI 데스크탑 앱입니다.
 ## 실행
 
 ```bash
-npm install
-npm run tauri dev
+pnpm install
+pnpm tauri dev
 ```
 
 ## 빌드
 
 ```bash
-npm run tauri build
+pnpm tauri build
 ```
