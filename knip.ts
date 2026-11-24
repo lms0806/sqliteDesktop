@@ -2,7 +2,14 @@ import { defineConfig } from "knip/config";
 
 export default defineConfig({
   entry: ["src/main.tsx!"],
-  project: ["src/**/*.{ts,tsx}!"],
+  project: ["src/**/*.{ts,tsx,css}!"],
+  compilers: {
+    css: (source) =>
+      Array.from(
+        source.matchAll(/@import\s+(?:url\(\s*)?["']([^"']+)["']/g),
+        ([, specifier]) => `import ${JSON.stringify(specifier)};`,
+      ).join("\n"),
+  },
   include: [
     "dependencies",
     "unlisted",
