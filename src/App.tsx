@@ -14,7 +14,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const clearError = () => setError(null);
+  const clearError = () => {
+    setError(null);
+  };
 
   const openDatabase = useCallback(async () => {
     clearError();
@@ -172,7 +174,9 @@ function App() {
             </div>
             <textarea
               value={sql}
-              onChange={(e) => setSql(e.target.value)}
+              onChange={(event) => {
+                setSql(event.target.value);
+              }}
               spellCheck={false}
               rows={6}
               placeholder="SELECT * FROM table_name LIMIT 100;"
@@ -212,9 +216,8 @@ function App() {
   );
 }
 
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) return "NULL";
-  if (typeof value === "object") return JSON.stringify(value);
+function formatCell(value: QueryResult["rows"][number][number]): string {
+  if (value === null) return "NULL";
   return String(value);
 }
 
