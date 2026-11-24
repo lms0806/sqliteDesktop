@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "knip:strict": "knip --strict",
+    "knip:strict": "knip --cache --reporter symbols --reporter cycles",
+    "knip:strict:ci": "knip --cache --reporter symbols --reporter cycles --reporter github-actions",
+    "knip:prod": "knip --cache --strict --reporter symbols --reporter cycles",
+    "knip:prod:ci": "knip --cache --strict --reporter symbols --reporter cycles --reporter github-actions",
     "preview": "vite preview",
     "tauri": "tauri"
   },
