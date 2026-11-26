@@ -1,10 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { sql as sqlLanguage, SQLite } from "@codemirror/lang-sql";
-import { EditorView, keymap } from "@codemirror/view";
-import CodeMirror from "@uiw/react-codemirror";
 import type { ColumnInfo, DatabaseInfo, QueryResult } from "./types";
+
+const SqlEditor = lazy(() => import("./SqlEditor"));
 
 const primaryButtonClass =
   "cursor-pointer rounded-md bg-[#4a7cff] px-[14px] py-1.5 text-[0.9rem] text-white enabled:hover:bg-[#3d6ae8] disabled:cursor-not-allowed disabled:opacity-50";
@@ -26,6 +25,7 @@ function App() {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isEditorRequested, setIsEditorRequested] = useState(false);
 
   const clearError = () => {
     setError(null);
@@ -90,73 +90,9 @@ function App() {
     }
   }, [dbPath, sql]);
 
-  const editorExtensions = useMemo(() => {
-    const schema = Object.fromEntries(
-      tables.map((table) => [
-        table,
-        table === selectedTable
-          ? columns.map((column) => ({
-              label: column.name,
-              type: "property",
-              detail: column.type_name || undefined,
-            }))
-          : [],
-      ]),
-    );
-
-    return [
-      sqlLanguage({
-        dialect: SQLite,
-        schema,
-        upperCaseKeywords: true,
-      }),
-      keymap.of([
-        {
-          key: "Ctrl-Enter",
-          run: () => {
-            void runQuery();
-            return true;
-          },
-        },
-      ]),
-      EditorView.theme(
-        {
-          "&": {
-            backgroundColor: "#252830",
-            color: "#e8eaed",
-            fontFamily: '"Cascadia Code", Consolas, monospace',
-            fontSize: "0.9rem",
-          },
-          ".cm-editor, .cm-scroller, .cm-content": {
-            backgroundColor: "#252830",
-          },
-          ".cm-content": { caretColor: "#e8eaed", padding: "10px 0" },
-          ".cm-line": { backgroundColor: "#252830" },
-          ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#e8eaed" },
-          ".cm-gutters": {
-            backgroundColor: "#22252c",
-            borderRight: "1px solid #3a3f4b",
-            color: "#9aa0a6",
-          },
-          ".cm-activeLine": { backgroundColor: "#2e323a" },
-          ".cm-activeLineGutter": { backgroundColor: "#2e323a" },
-          ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
-            backgroundColor: "#4a7cff66",
-          },
-          ".cm-tooltip-autocomplete": {
-            backgroundColor: "#252830",
-            border: "1px solid #3a3f4b",
-            color: "#e8eaed",
-          },
-          ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
-            backgroundColor: "#353b47",
-            color: "#ffffff",
-          },
-        },
-        { dark: true },
-      ),
-    ];
-  }, [columns, runQuery, selectedTable, tables]);
+  const requestRunQuery = useCallback(() => {
+    void runQuery();
+  }, [runQuery]);
 
   const closeDatabase = useCallback(async () => {
     clearError();
@@ -293,16 +229,34 @@ function App() {
                 실행
               </button>
             </div>
-            <CodeMirror
-              value={sql}
-              onChange={setSql}
-              placeholder="SELECT * FROM table_name LIMIT 100;"
-              extensions={editorExtensions}
-              basicSetup={{ lineNumbers: true }}
-              theme="dark"
-              minHeight="132px"
-              className="overflow-hidden rounded-md border border-[#3a3f4b] focus-within:border-[#4a7cff] focus-within:ring-1 focus-within:ring-[#4a7cff]"
-            />
+            {isEditorRequested ? (
+              <Suspense
+                fallback={
+                  <SqlEditorFallback
+                    value={sql}
+                    onChange={setSql}
+                    isLoading
+                  />
+                }
+              >
+                <SqlEditor
+                  value={sql}
+                  onChange={setSql}
+                  onRun={requestRunQuery}
+                  tables={tables}
+                  selectedTable={selectedTable}
+                  columns={columns}
+                />
+              </Suspense>
+            ) : (
+              <SqlEditorFallback
+                value={sql}
+                onChange={setSql}
+                onFocus={() => {
+                  setIsEditorRequested(true);
+                }}
+              />
+            )}
           </section>
 
           {result && (
@@ -351,6 +305,33 @@ function App() {
 function formatCell(value: QueryResult["rows"][number][number]): string {
   if (value === null) return "NULL";
   return String(value);
+}
+
+interface SqlEditorFallbackProps {
+  value: string;
+  onChange: (value: string) => void;
+  onFocus?: () => void;
+  isLoading?: boolean;
+}
+
+function SqlEditorFallback({
+  value,
+  onChange,
+  onFocus,
+  isLoading = false,
+}: SqlEditorFallbackProps) {
+  return (
+    <textarea
+      aria-busy={isLoading}
+      value={value}
+      onChange={(event) => {
+        onChange(event.target.value);
+      }}
+      onFocus={onFocus}
+      placeholder="SELECT * FROM table_name LIMIT 100;"
+      className="min-h-[132px] w-full resize-y rounded-md border border-[#3a3f4b] bg-[#252830] px-3 py-2.5 font-['Cascadia_Code','Consolas',monospace] text-[0.9rem] text-[#e8eaed] outline-none"
+    />
+  );
 }
 
 export default App;
