@@ -25,3 +25,11 @@ pnpm tauri dev
 ```bash
 pnpm tauri build
 ```
+
+## 테스트
+
+```bash
+pnpm run test:rust
+```
+
+Rust 테스트는 `src-tauri/src/tests/`에 분리해 둡니다.

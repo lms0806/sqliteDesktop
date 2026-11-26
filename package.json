@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --concurrency auto --max-warnings 0",
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "lint:stats": "eslint . --concurrency auto --stats --format json",
     "lint:cached": "eslint . --cache --cache-strategy content --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
