@@ -108,30 +108,30 @@ fn list_tables(state: State<DbState>) -> Result<Vec<String>, String> {
 #[tauri::command]
 fn get_table_info(state: State<DbState>, table: String) -> Result<Vec<ColumnInfo>, String> {
     with_connection(&state, |conn| {
-    let tables = list_tables_inner(conn)?;
-    if !tables.iter().any(|t| t == &table) {
-        return Err(format!("테이블 '{table}'을(를) 찾을 수 없습니다."));
-    }
+        let tables = list_tables_inner(conn)?;
+        if !tables.iter().any(|t| t == &table) {
+            return Err(format!("테이블 '{table}'을(를) 찾을 수 없습니다."));
+        }
 
-    let sql = format!("PRAGMA table_info({})", quote_identifier(&table));
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+        let sql = format!("PRAGMA table_info({})", quote_identifier(&table));
+        let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
-    let columns = stmt
-        .query_map([], |row| {
-            Ok(ColumnInfo {
-                cid: row.get(0)?,
-                name: row.get(1)?,
-                type_name: row.get(2)?,
-                notnull: row.get::<_, i64>(3)? != 0,
-                default_value: row.get(4)?,
-                pk: row.get::<_, i64>(5)? != 0,
+        let columns = stmt
+            .query_map([], |row| {
+                Ok(ColumnInfo {
+                    cid: row.get(0)?,
+                    name: row.get(1)?,
+                    type_name: row.get(2)?,
+                    notnull: row.get::<_, i64>(3)? != 0,
+                    default_value: row.get(4)?,
+                    pk: row.get::<_, i64>(5)? != 0,
+                })
             })
-        })
-        .map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
 
-    Ok(columns)
+        Ok(columns)
     })
 }
 
@@ -148,24 +148,26 @@ fn execute_query(state: State<DbState>, sql: String) -> Result<QueryResult, Stri
     }
 
     with_connection(&state, |conn| {
-    let mut stmt = conn.prepare(&sql).map_err(|e| format!("쿼리 준비 실패: {e}"))?;
-    let column_count = stmt.column_count();
-    let columns: Vec<String> = (0..column_count)
-        .map(|i| stmt.column_name(i).unwrap_or("").to_string())
-        .collect();
+        let mut stmt = conn
+            .prepare(&sql)
+            .map_err(|e| format!("쿼리 준비 실패: {e}"))?;
+        let column_count = stmt.column_count();
+        let columns: Vec<String> = (0..column_count)
+            .map(|i| stmt.column_name(i).unwrap_or("").to_string())
+            .collect();
 
-    let mut rows = Vec::new();
-    let mut rows_iter = stmt.query([]).map_err(|e| format!("쿼리 실행 실패: {e}"))?;
+        let mut rows = Vec::new();
+        let mut rows_iter = stmt.query([]).map_err(|e| format!("쿼리 실행 실패: {e}"))?;
 
-    while let Some(row) = rows_iter.next().map_err(|e| e.to_string())? {
-        let mut values = Vec::with_capacity(column_count);
-        for i in 0..column_count {
-            values.push(value_to_json(row, i)?);
+        while let Some(row) = rows_iter.next().map_err(|e| e.to_string())? {
+            let mut values = Vec::with_capacity(column_count);
+            for i in 0..column_count {
+                values.push(value_to_json(row, i)?);
+            }
+            rows.push(values);
         }
-        rows.push(values);
-    }
 
-    Ok(QueryResult { columns, rows })
+        Ok(QueryResult { columns, rows })
     })
 }
 
