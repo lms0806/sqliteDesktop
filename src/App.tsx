@@ -1,6 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { sql as sqlLanguage, SQLite } from "@codemirror/lang-sql";
+import { EditorView, keymap } from "@codemirror/view";
+import CodeMirror from "@uiw/react-codemirror";
 import type { ColumnInfo, DatabaseInfo, QueryResult } from "./types";
 
 const primaryButtonClass =
@@ -86,6 +89,74 @@ function App() {
       setLoading(false);
     }
   }, [dbPath, sql]);
+
+  const editorExtensions = useMemo(() => {
+    const schema = Object.fromEntries(
+      tables.map((table) => [
+        table,
+        table === selectedTable
+          ? columns.map((column) => ({
+              label: column.name,
+              type: "property",
+              detail: column.type_name || undefined,
+            }))
+          : [],
+      ]),
+    );
+
+    return [
+      sqlLanguage({
+        dialect: SQLite,
+        schema,
+        upperCaseKeywords: true,
+      }),
+      keymap.of([
+        {
+          key: "Ctrl-Enter",
+          run: () => {
+            void runQuery();
+            return true;
+          },
+        },
+      ]),
+      EditorView.theme(
+        {
+          "&": {
+            backgroundColor: "#252830",
+            color: "#e8eaed",
+            fontFamily: '"Cascadia Code", Consolas, monospace',
+            fontSize: "0.9rem",
+          },
+          ".cm-editor, .cm-scroller, .cm-content": {
+            backgroundColor: "#252830",
+          },
+          ".cm-content": { caretColor: "#e8eaed", padding: "10px 0" },
+          ".cm-line": { backgroundColor: "#252830" },
+          ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#e8eaed" },
+          ".cm-gutters": {
+            backgroundColor: "#22252c",
+            borderRight: "1px solid #3a3f4b",
+            color: "#9aa0a6",
+          },
+          ".cm-activeLine": { backgroundColor: "#2e323a" },
+          ".cm-activeLineGutter": { backgroundColor: "#2e323a" },
+          ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
+            backgroundColor: "#4a7cff66",
+          },
+          ".cm-tooltip-autocomplete": {
+            backgroundColor: "#252830",
+            border: "1px solid #3a3f4b",
+            color: "#e8eaed",
+          },
+          ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
+            backgroundColor: "#353b47",
+            color: "#ffffff",
+          },
+        },
+        { dark: true },
+      ),
+    ];
+  }, [columns, runQuery, selectedTable, tables]);
 
   const closeDatabase = useCallback(async () => {
     clearError();
@@ -204,7 +275,15 @@ function App() {
 
           <section>
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-[0.95rem]">SQL (SELECT)</h2>
+              <div>
+                <h2 className="text-[0.95rem]">SQL (SELECT)</h2>
+                <p className="mt-1 text-xs text-[#9aa0a6]">
+                  <kbd className="rounded border border-[#3a3f4b] bg-[#22252c] px-1 py-0.5 font-mono text-[0.7rem] text-[#c8ccd2]">
+                    Ctrl+Enter
+                  </kbd>{" "}
+                  실행 · Ctrl+Space 자동완성
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={runQuery}
@@ -214,15 +293,15 @@ function App() {
                 실행
               </button>
             </div>
-            <textarea
+            <CodeMirror
               value={sql}
-              onChange={(event) => {
-                setSql(event.target.value);
-              }}
-              spellCheck={false}
-              rows={6}
+              onChange={setSql}
               placeholder="SELECT * FROM table_name LIMIT 100;"
-              className="w-full resize-y rounded-md border border-[#3a3f4b] bg-[#252830] px-3 py-2.5 font-['Cascadia_Code','Consolas',monospace] text-[0.9rem] text-[#e8eaed] outline-none focus:outline-2 focus:outline-[#4a7cff]"
+              extensions={editorExtensions}
+              basicSetup={{ lineNumbers: true }}
+              theme="dark"
+              minHeight="132px"
+              className="overflow-hidden rounded-md border border-[#3a3f4b] focus-within:border-[#4a7cff] focus-within:ring-1 focus-within:ring-[#4a7cff]"
             />
           </section>
 
