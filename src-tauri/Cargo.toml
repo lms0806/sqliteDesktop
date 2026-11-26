@@ -32,3 +32,20 @@ unused_assignments = "warn"         # 불필요한 값 주입 탐지
 unused_parens = "warn"              # 불필요한 괄호 탐지
 unused_macros = "warn"              # 사용 안하는 macro 탐지
 unused_must_use = "warn"            # 불필요한 Result, Option 등의 반환값 무시 탐지
+
+[lints.clippy]
+multiple_crate_versions = "allow"
+dbg_macro = "deny"                  # 디버그용 dbg! 잔존 방지
+todo = "deny"                       # 미완성 todo! 잔존 방지
+unimplemented = "deny"              # unimplemented! 잔존 방지
+absolute_paths = "deny"             # 긴 절대 경로 대신 use import 사용 강제
+unwrap_used = "deny"                # 실패 시 panic하는 unwrap()/unwrap_err() 사용 금지
+cognitive_complexity = "deny"       # 분기·중첩이 과도하게 많은 함수 감지
+too_many_lines = "deny"             # 200줄을 넘는 함수·메서드 방지 (clippy.toml)
+panic = "deny"                      # 운영 코드의 명시적 panic! 호출 금지
+cast_lossless = "deny"              # 손실 없는 as 변환 대신 From::from 사용 유도
+
+arithmetic_side_effects = "warn"        # 오버플로 및 언더플로 등 산술 연산의 부작용 감지
+redundant_clone = "warn"                # 불필요한 clone() 호출 감지
+needless_borrow = "warn"                # 불필요한 참조 사용 감지
+redundant_allocation = "warn"           # 불필요한 메모리 할당 감지
