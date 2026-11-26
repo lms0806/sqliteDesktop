@@ -183,7 +183,6 @@ fn close_database(state: State<DbState>) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
         .manage(DbState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             open_database,
