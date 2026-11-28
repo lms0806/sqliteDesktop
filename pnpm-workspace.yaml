@@ -32,5 +32,6 @@ minimumReleaseAgeExclude:
   - vite@8.4.0
   - '@eslint/config-array@0.23.7'
   - eslint@10.16.0
+  - knip@6.49.0
 
 minimumReleaseAgeExcludePrune: true
