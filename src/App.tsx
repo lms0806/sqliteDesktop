@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { toast } from "sonner";
 import type { ColumnInfo, DatabaseInfo, QueryResult } from "./types";
 
 const SqlEditor = lazy(() => import("./SqlEditor"));
@@ -48,8 +49,13 @@ function App() {
       setColumns([]);
       setSql("SELECT 1;");
       setResult(null);
+      toast.success("데이터베이스를 열었습니다.", {
+        description: `${info.tables.length}개 테이블을 찾았습니다.`,
+      });
     } catch (e) {
-      setError(String(e));
+      const message = String(e);
+      setError(message);
+      toast.error("데이터베이스를 열지 못했습니다.", { description: message });
     } finally {
       setLoading(false);
     }
@@ -82,9 +88,14 @@ function App() {
     try {
       const data = await invoke<QueryResult>("execute_query", { sql });
       setResult(data);
+      toast.success("쿼리를 실행했습니다.", {
+        description: `${data.rows.length}행을 반환했습니다.`,
+      });
     } catch (e) {
+      const message = String(e);
       setResult(null);
-      setError(String(e));
+      setError(message);
+      toast.error("쿼리 실행에 실패했습니다.", { description: message });
     } finally {
       setLoading(false);
     }
@@ -99,7 +110,9 @@ function App() {
     try {
       await invoke("close_database");
     } catch (e) {
-      setError(String(e));
+      const message = String(e);
+      setError(message);
+      toast.error("데이터베이스를 닫지 못했습니다.", { description: message });
       return;
     }
     setDbPath(null);
@@ -108,6 +121,7 @@ function App() {
     setColumns([]);
     setSql("SELECT 1;");
     setResult(null);
+    toast.success("데이터베이스를 닫았습니다.");
   }, []);
 
   return (
