@@ -36,7 +36,7 @@
     "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
-    "eslint": "^10.15.0",
+    "eslint": "^10.16.0",
     "globals": "^17.14.0",
     "knip": "^6.48.0",
     "typescript": "^6.0.3",

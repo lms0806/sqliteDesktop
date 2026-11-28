@@ -30,5 +30,7 @@ minimumReleaseAgeExclude:
   - '@types/react@19.3.3'
   - '@codemirror/view@6.44.2'
   - vite@8.4.0
+  - '@eslint/config-array@0.23.7'
+  - eslint@10.16.0
 
 minimumReleaseAgeExcludePrune: true
